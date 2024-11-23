@@ -10,7 +10,8 @@ namespace hmerritt;
 */
 class Cache
 {
-
+    public $cache;
+    
     /**
      * Initiate cache
      *

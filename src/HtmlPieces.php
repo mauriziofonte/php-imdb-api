@@ -124,6 +124,36 @@ class HtmlPieces
 
                 return preg_replace("/[^0-9]/", "", $this->strClean($rating_votes));
                 break;
+            
+            case "rating_aggregate":
+                $rating = $maxRating = $numVotes = null;
+                
+                $ratingAggregateContainers = $dom->find($page, 'div.rating-bar__base-button > a > span > div');
+                $ratingContainer = $dom->find($page, '[data-testid=hero-rating-bar__aggregate-rating__score]');
+                if($this->count($ratingAggregateContainers) > 0) {
+                    $onlyRating = ($ratingContainer) ? trim(strip_tags($ratingContainer)) : '';
+                    $aggrRating = [];
+                    foreach($ratingAggregateContainers as $ratingAggregateContainer) {
+                        $aggrRating[] = trim(strip_tags($ratingAggregateContainer));
+                    }
+                    $aggrRating = array_unique($aggrRating);
+                    $aggrRating = $aggrRating[0];
+                    
+                    // match [number[.,]number]/[number] on $onlyRating
+                    if (preg_match('/([0-9]+)([\.,])([0-9]+)\s*\/([0-9]+)/ui', $onlyRating, $matches)) {
+                        $rating = round(floatval($matches[1] . str_replace(',', '.', $matches[2]) . $matches[3]), 2);
+                        $maxRating = intval($matches[4]);
+                        $numVotes = intval(str_replace($onlyRating, '', $aggrRating));
+                    }
+                }
+                
+                return [
+                    'rating' => $rating,
+                    'maxRating' => $maxRating,
+                    'numVotes' => $numVotes
+                ];
+                
+                break;
 
             case "poster":
                 $patterns = [".ipc-poster .ipc-media img", ".poster img"];
@@ -257,7 +287,7 @@ class HtmlPieces
                 break;
 
             case "tvShow":
-                preg_match('/TV Series/i', $page, $matches, PREG_OFFSET_CAPTURE);
+                preg_match('/(TV Series|Serie TV)/i', $page, $matches, PREG_OFFSET_CAPTURE);
                 return !!$this->count($matches);
                 break;
 
@@ -379,7 +409,19 @@ class HtmlPieces
                     foreach ($sections as $section)
                     {
                         $sectionName = @strtolower($dom->find($section, ".ipc-title__text")->text);
-                        if ($sectionName === $element) {
+
+                        // "ipc-title__text" are assumed to be ENGLISH only. 
+                        // This way, "$sectionName === $element" will NEVER evaluate to TRUE
+                        // that's why we need to map the english names to italian names to be able
+                        // to get the correct section
+						$engToItalianMap = [
+							'titles' => 'titoli',
+							'names' => 'persone',
+							'people' => 'persone',
+							'companies' => 'compagnie'
+						];
+						
+                        if ($sectionName === $element || $sectionName === $engToItalianMap[$element]) {
                             $sectionRows = $section->find("ul li");
                             if ($this->count($sectionRows) > 0)
                             {
@@ -401,6 +443,29 @@ class HtmlPieces
                                     $row["image"] = empty($row["image"]) ? "" : $row["image"];
 
                                     $row["id"] = $this->extractImdbId($link->href);
+
+                                    // gather additional informations right under the section main title heading
+                                    // this is mainly to gather the year of the title
+									$additionalInfoRows = $sectionRow->find('ul.ipc-inline-list li');
+									$extra = [];
+									$year = null;
+									if ($this->count($additionalInfoRows) > 0) {
+										foreach ($additionalInfoRows as $additionalInfoRow)
+										{
+											$text = trim(strip_tags($dom->find($additionalInfoRow, 'span')));
+											if(preg_match('/([0-9]{4})/u', $text, $matches) ) {
+												if(is_numeric($matches[1]) && intval($matches[1]) >= 1940 && intval($matches) <= 2030) {
+													$year = intval($matches[1]);
+												}
+											}
+											else {
+												$extra[] = $text;
+											}
+										}
+									}
+									
+									$row["year"] = $year;
+									$row["extra"] = $extra;
 
                                     array_push($response, $row);
                                 }
