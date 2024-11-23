@@ -19,10 +19,6 @@ switch($type)
 {
 	case "film":
 		$response = $imdb->film($query, [ 'cache' => false, 'techSpecs' => true ]);
-		// $response = $imdb->film($query, [ 'cache' => true, 'cacheType' => 'redis', 'cacheRedis' => [
-		// 	'host'     => '127.0.0.1',
-		// 	'password' => '',
-		// ], 'techSpecs' => true ]);
 		break;
 
 	case "search":

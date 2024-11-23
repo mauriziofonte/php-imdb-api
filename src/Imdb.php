@@ -10,7 +10,6 @@ namespace hmerritt;
 */
 class Imdb
 {
-
     /**
      * Returns default options combined with any user options
      *
@@ -22,14 +21,6 @@ class Imdb
         //  Default options
         $defaults = [
             'cache'        => true,
-            'cacheType'    => 'file',
-            'cacheRedis'   => [
-                'scheme'   => 'tcp',
-                'host'     => '127.0.0.1',
-                'port'     => 6379,
-                'password' => '',
-                'database' => 0,
-            ],
             'category'     => 'all',
             'curlHeaders'  => ['Accept-Language: en-US,en;q=0.5'],
             'techSpecs'    => true,
@@ -63,7 +54,7 @@ class Imdb
 
         //  Initiate cache object
         // -> handles storing/retrieving cached results
-        $cache = new Cache($options["cacheType"], $options["cacheRedis"]);
+        $cache = new Cache();
 
         //  Initiate dom object
         //  -> handles page scraping
@@ -94,8 +85,7 @@ class Imdb
         if ($options["cache"]) {
             //  Check cache for film
             if ($cache->has($filmId)) {
-                if ($cache->isRedis()) return (array) $cache->get($filmId);
-                else  return $cache->get($filmId)->film;
+                return $cache->get($filmId)->film;
             }
         }
 
