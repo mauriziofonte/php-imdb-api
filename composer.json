@@ -1,5 +1,5 @@
 {
-    "name": "hmerritt/imdb-api",
+    "name": "mfonte/imdb-scraper",
     "description": "IMDB API that can fetch film data and search results",
     "keywords": [
         "imdb",
@@ -34,7 +34,7 @@
     },
     "autoload": {
         "psr-4": {
-            "hmerritt\\": "src/"
+            "Mfonte\\ImdbScraper\\": "src/"
         }
     }
 }

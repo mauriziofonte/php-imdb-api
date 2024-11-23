@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use hmerritt\Response;
+use Mfonte\ImdbScraper\Response;
 
 class ResponseTest extends TestCase {
 

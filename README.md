@@ -1,17 +1,11 @@
 # PHP IMDB API
 
-[![Latest Stable Version](https://poser.pugx.org/hmerritt/imdb-api/v/stable)](https://packagist.org/packages/hmerritt/imdb-api)
-[![CircleCI](https://circleci.com/gh/hmerritt/php-imdb-api/tree/master.svg?style=svg)](https://circleci.com/gh/hmerritt/php-imdb-api/tree/master)
-[![Coverage Status](https://coveralls.io/repos/github/hmerritt/php-imdb-api/badge.svg?branch=master)](https://coveralls.io/github/hmerritt/php-imdb-api?branch=master)
-
-PHP IMDB-API that can fetch film data and search results.
-
 ## Install
 
 Install the latest version using [composer](https://getcomposer.org/).
 
 ```
-$ composer require hmerritt/imdb-api
+$ composer require mfonte/imdb-scraper
 ```
 
 ## Usage
@@ -19,7 +13,7 @@ $ composer require hmerritt/imdb-api
 ```php
 // Assuming you installed from Composer:
 require "vendor/autoload.php";
-use hmerritt\Imdb;
+use Mfonte\ImdbScraper\Imdb;
 
 $imdb = new Imdb;
 

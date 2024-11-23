@@ -1,11 +1,11 @@
 <?php
-namespace hmerritt;
+namespace Mfonte\ImdbScraper;
 
 /**
 *  Class HtmlPieces
 *
 *
-* @package hmerritt/imdb-api
+* @package mfonte/imdb-scraper
 * @author Harry Merritt
 */
 class HtmlPieces

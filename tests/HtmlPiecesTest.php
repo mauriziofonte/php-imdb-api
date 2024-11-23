@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use hmerritt\HtmlPieces;
+use Mfonte\ImdbScraper\HtmlPieces;
 
 class HtmlPiecesTest extends TestCase {
 

@@ -1,9 +1,9 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use hmerritt\Imdb;
-use hmerritt\Cache;
-use hmerritt\Response;
+use Mfonte\ImdbScraper\Imdb;
+use Mfonte\ImdbScraper\Cache;
+use Mfonte\ImdbScraper\Response;
 
 class ImdbTest extends TestCase {
 
