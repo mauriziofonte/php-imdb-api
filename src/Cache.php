@@ -10,9 +10,9 @@ namespace Mfonte\ImdbScraper;
 */
 class Cache
 {
-	private $cache;
-	
-    function __construct()
+    private $cache;
+    
+    public function __construct()
     {
         /**
          * Initiate cache database
@@ -60,9 +60,9 @@ class Cache
      * Get an item from the cache
      *
      * @param string $key
-     * @return object
+     * @return \Filebase\Document
      */
-    public function get(string $key): object
+    public function get(string $key): mixed
     {
         return $this->cache->get($key);
     }

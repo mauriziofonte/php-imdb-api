@@ -79,18 +79,24 @@ class HtmlPieces
                 $length = "";
 
                 $length = $dom->find($page, $patterns[1])->text;
-                if ($this->count($length) > 0) return $this->strClean($length);
+                if ($this->count($length) > 0) {
+                    return $this->strClean($length);
+                }
 
                 $length = "";
                 $iter = $dom->find($page, $patterns[0]);
-                if ($this->count($iter) === 0) return $length;
+                if ($this->count($iter) === 0) {
+                    return $length;
+                }
 
                 // Loop row below main title
                 // 2014 · 12A · 2h 49min
                 foreach ($iter as $iterRow) {
                     // Get row text
                     $rowText = $iterRow->text;
-                    if ($this->count($rowText) === 0) continue;
+                    if ($this->count($rowText) === 0) {
+                        continue;
+                    }
 
                     // Attempt to match length (runtime) from text
                     $isMatch = preg_match("/([0-9]+[h|m] [0-9]+[h|m])|([0-9]+[h|m])/", $rowText);
@@ -130,10 +136,10 @@ class HtmlPieces
                 
                 $ratingAggregateContainers = $dom->find($page, 'div.rating-bar__base-button > a > span > div');
                 $ratingContainer = $dom->find($page, '[data-testid=hero-rating-bar__aggregate-rating__score]');
-                if($this->count($ratingAggregateContainers) > 0) {
+                if ($this->count($ratingAggregateContainers) > 0) {
                     $onlyRating = ($ratingContainer) ? trim(strip_tags($ratingContainer)) : '';
                     $aggrRating = [];
-                    foreach($ratingAggregateContainers as $ratingAggregateContainer) {
+                    foreach ($ratingAggregateContainers as $ratingAggregateContainer) {
                         $aggrRating[] = trim(strip_tags($ratingAggregateContainer));
                     }
                     $aggrRating = array_unique($aggrRating);
@@ -197,8 +203,7 @@ class HtmlPieces
 
                 // Use $findAllCastOld
                 if ($this->count($findAllCastOld)) {
-                    foreach ($findAllCastOld as $castRow)
-                    {
+                    foreach ($findAllCastOld as $castRow) {
                         if ($this->count($castRow->find('.primary_photo')) === 0) {
                             continue;
                         }
@@ -229,8 +234,7 @@ class HtmlPieces
 
                 // Use 'new' $findAllCast
                 if ($this->count($findAllCast)) {
-                    foreach ($findAllCast as $castRow)
-                    {
+                    foreach ($findAllCast as $castRow) {
                         if ($this->count($castRow->find('img')) === 0) {
                             continue;
                         }
@@ -295,7 +299,7 @@ class HtmlPieces
                 $seasons = [];
                 $findAllSeasons = $dom->find($page, "#bySeason > option");
                 $dom = new \PHPHtmlParser\Dom();
-                foreach ($findAllSeasons as $seasonRow){
+                foreach ($findAllSeasons as $seasonRow) {
                     $season = [];
                     $seasonValue = $seasonRow->getAttribute('value');
                     $season['season'] = $seasonValue;
@@ -309,7 +313,7 @@ class HtmlPieces
             case "episodes":
                 $episodes = [];
                 $findAllEpisodes = $dom->find($page, ".eplist > .list_item");
-                foreach ($findAllEpisodes as $episodeRow){
+                foreach ($findAllEpisodes as $episodeRow) {
                     $episode = [];
                     $hyperlink = $episodeRow->find("a[itemprop=url]");
                     $episode["id"]          = $this->extractImdbId($hyperlink->getAttribute("href"));
@@ -317,11 +321,11 @@ class HtmlPieces
                     $episode['description'] = $episodeRow->find(".item_description")->text;
                     $rating                 = $episodeRow->find(".ipl-rating-star__rating");
                     $episode["poster"]      = "";
-                    if($this->count($rating)) {
+                    if ($this->count($rating)) {
                         $episode['rating'] = $rating->text;
                     }
                     $image = $hyperlink->find("img");
-                    if($this->count($image)) {
+                    if ($this->count($image)) {
                         $poster = $image->getAttribute("src");
                         $episode["poster"] = preg_match('/@/', $poster) ? preg_split('~@(?=[^@]*$)~', $poster)[0] . "@.jpg" : $poster;
 
@@ -339,9 +343,8 @@ class HtmlPieces
 
                 // Old ui
                 $table = $dom->find($page, '.dataTable tr');
-                if ($this->count($table) > 0) { 
-                    foreach ($table as $row)
-                    {
+                if ($this->count($table) > 0) {
+                    foreach ($table as $row) {
                         $row_title = $row->find('td')[0]->text(true);
                         $row_value = str_replace("  ", " <br> ", $row->find('td')[1]->text(true));
                         $row = [
@@ -364,24 +367,28 @@ class HtmlPieces
                     'negativeFormat',
                     'process',
                     'printedFormat'
-                ] as $itemId)
-                {
+                ] as $itemId) {
                     $row = $dom->find($page, "#$itemId");
                     $row_title = $row->find(".ipc-metadata-list-item__label");
-                    if ($this->count($row_title) < 1) continue;
+                    if ($this->count($row_title) < 1) {
+                        continue;
+                    }
                     $row_value_container = $row->find('.ipc-metadata-list-item__content-container');
                     $row_value_list = $row_value_container->find('li');
                     $row_value = '';
                     if ($this->count($row_value_list) > 0) {
-                        foreach ($row_value_list as $list_item)
-                        {
+                        foreach ($row_value_list as $list_item) {
                             $list_item_value = $list_item->find('.ipc-metadata-list-item__list-content-item');
                             $list_item_subtext = $list_item->find('.ipc-metadata-list-item__list-content-item--subText');
                             if ($this->count($list_item_value) > 0) {
                                 $delimiter = '|';
                                 $textToAdd = $list_item_value->text(true);
-                                if ($this->count($list_item_subtext) > 0) $textToAdd = "$textToAdd " . $list_item_subtext->text(true);
-                                if ($this->count($row_value) > 0) $textToAdd .= " $delimiter $textToAdd";
+                                if ($this->count($list_item_subtext) > 0) {
+                                    $textToAdd = "$textToAdd " . $list_item_subtext->text(true);
+                                }
+                                if ($this->count($row_value) > 0) {
+                                    $textToAdd .= " $delimiter $textToAdd";
+                                }
                                 $row_value .= $textToAdd;
                             }
                         }
@@ -404,29 +411,25 @@ class HtmlPieces
             case "companies":
                 $response = [];
                 $sections = $dom->find($page, ".ipc-page-section");
-                if ($this->count($sections) > 0)
-                {
-                    foreach ($sections as $section)
-                    {
+                if ($this->count($sections) > 0) {
+                    foreach ($sections as $section) {
                         $sectionName = @strtolower($dom->find($section, ".ipc-title__text")->text);
 
-                        // "ipc-title__text" are assumed to be ENGLISH only. 
+                        // "ipc-title__text" are assumed to be ENGLISH only.
                         // This way, "$sectionName === $element" will NEVER evaluate to TRUE
                         // that's why we need to map the english names to italian names to be able
                         // to get the correct section
-						$engToItalianMap = [
-							'titles' => 'titoli',
-							'names' => 'persone',
-							'people' => 'persone',
-							'companies' => 'compagnie'
-						];
-						
+                        $engToItalianMap = [
+                            'titles' => 'titoli',
+                            'names' => 'persone',
+                            'people' => 'persone',
+                            'companies' => 'compagnie'
+                        ];
+                        
                         if ($sectionName === $element || $sectionName === $engToItalianMap[$element]) {
                             $sectionRows = $section->find("ul li");
-                            if ($this->count($sectionRows) > 0)
-                            {
-                                foreach ($sectionRows as $sectionRow)
-                                {
+                            if ($this->count($sectionRows) > 0) {
+                                foreach ($sectionRows as $sectionRow) {
                                     $row = [];
 
                                     $link = $dom->find($sectionRow, 'a');
@@ -436,8 +439,7 @@ class HtmlPieces
                                     }
 
                                     $row["image"] = $dom->find($sectionRow, '.ipc-image')->src;
-                                    if (preg_match('/@/', $row["image"]))
-                                    {
+                                    if (preg_match('/@/', $row["image"])) {
                                         $row["image"] = preg_split('~@(?=[^@]*$)~', $row["image"])[0] . "@.jpg";
                                     }
                                     $row["image"] = empty($row["image"]) ? "" : $row["image"];
@@ -446,26 +448,24 @@ class HtmlPieces
 
                                     // gather additional informations right under the section main title heading
                                     // this is mainly to gather the year of the title
-									$additionalInfoRows = $sectionRow->find('ul.ipc-inline-list li');
-									$extra = [];
-									$year = null;
-									if ($this->count($additionalInfoRows) > 0) {
-										foreach ($additionalInfoRows as $additionalInfoRow)
-										{
-											$text = trim(strip_tags($dom->find($additionalInfoRow, 'span')));
-											if(preg_match('/([0-9]{4})/u', $text, $matches) ) {
-												if(is_numeric($matches[1]) && intval($matches[1]) >= 1940 && intval($matches) <= 2030) {
-													$year = intval($matches[1]);
-												}
-											}
-											else {
-												$extra[] = $text;
-											}
-										}
-									}
-									
-									$row["year"] = $year;
-									$row["extra"] = $extra;
+                                    $additionalInfoRows = $sectionRow->find('ul.ipc-inline-list li');
+                                    $extra = [];
+                                    $year = null;
+                                    if ($this->count($additionalInfoRows) > 0) {
+                                        foreach ($additionalInfoRows as $additionalInfoRow) {
+                                            $text = trim(strip_tags($dom->find($additionalInfoRow, 'span')));
+                                            if (preg_match('/([0-9]{4})/u', $text, $matches)) {
+                                                if (is_numeric($matches[1]) && intval($matches[1]) >= 1940 && intval($matches) <= 2030) {
+                                                    $year = intval($matches[1]);
+                                                }
+                                            } else {
+                                                $extra[] = $text;
+                                            }
+                                        }
+                                    }
+                                    
+                                    $row["year"] = $year;
+                                    $row["extra"] = $extra;
 
                                     array_push($response, $row);
                                 }
@@ -491,8 +491,7 @@ class HtmlPieces
     public function findMatchInPatterns(object $dom, object $page, array $patterns, string $type = "text")
     {
         $str = "";
-        foreach ($patterns as $pattern)
-        {
+        foreach ($patterns as $pattern) {
             if ($type === "src") {
                 $el = $dom->find($page, $pattern);
                 $str = $this->count($el) > 0 ? $el->getAttribute("src") : "";
@@ -502,7 +501,9 @@ class HtmlPieces
             } else {
                 $str = $dom->find($page, $pattern)->text;
             }
-            if ($this->count($str) > 0) break;
+            if ($this->count($str) > 0) {
+                break;
+            }
         }
         return $str;
     }
@@ -550,8 +551,7 @@ class HtmlPieces
         // '/yyxxxxxxx'
         preg_match('/\/[A-Za-z]{2}[0-9]+/', $str, $imdbIds);
         $id = substr($imdbIds[0], 1);
-        if ($id == NULL)
-        {
+        if ($id == null) {
             $id = "";
         }
         return $id;

@@ -63,8 +63,7 @@ class Response
     public function default(string $endpoint): array
     {
         $response = [];
-        switch($endpoint)
-        {
+        switch ($endpoint) {
             case "film":
                 $response = [
                     "id" => "",

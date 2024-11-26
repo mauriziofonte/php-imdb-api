@@ -13,7 +13,7 @@ class Imdb
     /**
      * Returns default options combined with any user options
      *
-     * @param string $options
+     * @param array $options
      * @return array $defaults
      */
     private function populateOptions(array $options = []): array
@@ -65,16 +65,13 @@ class Imdb
         $htmlPieces = new HtmlPieces;
 
         // Check for 'tt' at start of $filmId
-        if (substr($filmId, 0, 2) !== "tt")
-        {
+        if (substr($filmId, 0, 2) !== "tt") {
             //  Search $filmId and use first result
             $search_film = $this->search($filmId, [ "category" => "tt" ]);
-            if ($htmlPieces->count($search_film["titles"]) > 0)
-            {
+            if ($htmlPieces->count($search_film["titles"]) > 0) {
                 // Use first film returned from search
                 $filmId = $search_film["titles"][0]["id"];
-            } else
-            {
+            } else {
                 //  No film found
                 //  -> return default (empty) response
                 return $response->default('film');
@@ -105,10 +102,10 @@ class Imdb
         $response->add("rating_aggregate", $htmlPieces->get($page, "rating_aggregate"));
         $response->add("poster", $htmlPieces->get($page, "poster"));
         $response->add("trailer", $htmlPieces->get($page, "trailer"));
-        $response->add("tvShow",  $htmlPieces->get($page, "tvShow"));
+        $response->add("tvShow", $htmlPieces->get($page, "tvShow"));
         $response->add("cast", $htmlPieces->get($page, "cast"));
-        $response->add("seasons",  []);
-        $response->add("technical_specs",  []);
+        $response->add("seasons", []);
+        $response->add("technical_specs", []);
 
         //  If techSpecs is enabled in user $options
         //  -> Make a second request to load the full techSpecs page
@@ -165,7 +162,7 @@ class Imdb
         $search_url = urlencode(urldecode($search));
 
         //  Load imdb search page and parse the dom
-        $page = $dom->fetch("https://www.imdb.com/find?q=$search_url&s=".$options["category"], $options);
+        $page = $dom->fetch("https://www.imdb.com/find/?q=$search_url&s=".$options["category"], $options);
 
         //  Add all search data to response $store
         $response->add("titles", $htmlPieces->get($page, "titles"));
