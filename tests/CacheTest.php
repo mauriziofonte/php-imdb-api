@@ -1,23 +1,24 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use Mfonte\ImdbScraper\Imdb;
-use Mfonte\ImdbScraper\Response;
 use Mfonte\ImdbScraper\Cache;
 
-class CacheTest extends TestCase {
-
+class CacheTest extends TestCase
+{
     public function testAddToCache()
     {
         $cache = new Cache;
-        $testData = [
-            "title" => "Interstellar"
+
+        $keyValueStore = [
+            "title" => "Interstellar",
+            "year" => 2014,
+            "rating" => 8.7
         ];
 
-        $cache->add("test", $testData);
-        $testFile = $cache->get("test");
+        $cache->add("test", $keyValueStore);
+        $cacheContent = $cache->get("test");
 
-        $this->assertEquals($testData, $testFile->film);
+        $this->assertEquals($keyValueStore, $cacheContent);
 
         $cache->delete("test");
     }
@@ -25,9 +26,11 @@ class CacheTest extends TestCase {
     public function testHasCache()
     {
         $cache = new Cache;
-        $cache->add("testHas", [ "test" => "has" ]);
+        $cache->add("testHas", ["key" => "value"]);
 
         $this->assertEquals(true, $cache->has("testHas"));
+        $this->assertEquals('value', $cache->get("testHas")['key']);
+        
         $this->assertEquals(false, $cache->has("testHasNot"));
 
         $cache->delete("testHas");
@@ -36,11 +39,9 @@ class CacheTest extends TestCase {
     public function testDeleteFromCache()
     {
         $cache = new Cache;
-        $cache->add("testHas", [ "test" => "has" ]);
+        $cache->add("testHas", ["key" => "value"]);
 
         $this->assertEquals(true, $cache->has("testHas"));
-        $cache->delete("testHas");
-        $this->assertEquals(false, $cache->has("testHas"));
+        $this->assertEquals(true, $cache->delete("testHas"));
     }
-
 }

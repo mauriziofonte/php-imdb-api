@@ -1,30 +1,33 @@
 <?php
 namespace Mfonte\ImdbScraper;
 
+use Mfonte\ImdbScraper\Entities\Dataset;
+use Mfonte\ImdbScraper\Entities\SearchResult;
+use Mfonte\ImdbScraper\Entities\Title;
+
 /**
-*  Class Imdb
-*
+* Class Imdb
 *
 * @package mfonte/imdb-scraper
 * @author Harry Merritt
+* @author Maurizio Fonte
 */
 class Imdb
 {
     /**
-     * Returns default options combined with any user options
+     * Returns default options extended with any user options
      *
      * @param array $options
      * @return array $defaults
      */
-    private function populateOptions(array $options = []): array
+    private function extendOpts(array $options = []): array
     {
         //  Default options
         $defaults = [
-            'cache'        => true,
-            'category'     => 'all',
-            'curlHeaders'  => ['Accept-Language: en-US,en;q=0.5'],
-            'techSpecs'    => true,
-            'seasons'      => false,
+            'cache'         => false,
+            'locale'        => 'en',
+            'seasons'       => false,
+            'guzzleLogFile' => null
         ];
 
         //  Merge any user options with the default ones
@@ -37,139 +40,95 @@ class Imdb
     }
 
     /**
-     * Gets film data from IMDB. Will first search if the
-     * film name is passed instead of film-id
-     * @param string $filmId
-     * @param array  $options
-     * @return array $response
+     * Gets film data from IMDB.
+     *
+     * Both compatible with titles (search keyword) and film ids in the form of 'tt1234567'.
+     *
+     * @param string $idOrKeyword
+     * @param array  $options - user options (locale, cache, seasons)
+     * @return array
      */
-    public function film(string $filmId, array $options = []): array
+    public function film(string $idOrKeyword, array $options = []): array
     {
         //  Combine user options with default ones
-        $options = $this->populateOptions($options);
+        $options = $this->extendOpts($options);
 
-        //  Initiate response object
-        // -> handles what the api returns
-        $response = new Response;
-
-        //  Initiate cache object
-        // -> handles storing/retrieving cached results
-        $cache = new Cache();
-
-        //  Initiate dom object
-        //  -> handles page scraping
-        $dom = new Dom;
-
-        //  Initiate html-pieces object
-        //  -> handles finding specific content from the dom
-        $htmlPieces = new HtmlPieces;
+        $cache = new Cache;
 
         // Check for 'tt' at start of $filmId
-        if (substr($filmId, 0, 2) !== "tt") {
-            //  Search $filmId and use first result
-            $search_film = $this->search($filmId, [ "category" => "tt" ]);
-            if ($htmlPieces->count($search_film["titles"]) > 0) {
-                // Use first film returned from search
-                $filmId = $search_film["titles"][0]["id"];
-            } else {
+        if (substr($idOrKeyword, 0, 2) === "tt") {
+            $imdbId = $idOrKeyword;
+        } else {
+            $searchResults = $this->search($idOrKeyword, $options);
+
+            if ($searchResults->count() === 0) {
                 //  No film found
-                //  -> return default (empty) response
-                return $response->default('film');
+                return Title::newFromArray([]);
             }
+
+            // Get first search result
+            $imdbId = $searchResults->first()->id;
         }
 
-        //  If caching is enabled
+        // early return from cache, if the cache is enabled
         if ($options["cache"]) {
             //  Check cache for film
-            if ($cache->has($filmId)) {
-                return $cache->get($filmId)->film;
+            if ($cache->has($imdbId)) {
+                return $cache->get($imdbId);
             }
         }
 
-        //  Load imdb film page and parse the dom
-        $page = $dom->fetch("https://www.imdb.com/title/".$filmId."/", $options);
-        $htmlPieces->setFilmId($filmId);
+        // run the parser against this IMDB ID
+        $parser = Parser::parse($imdbId, $options);
+        $arrayProps = $parser->getProperties();
 
-        //  Add all film data to response $store
-        $response->add("id", $filmId);
-        $response->add("title", $htmlPieces->get($page, "title"));
-        $response->add("genres", $htmlPieces->get($page, "genre"));
-        $response->add("year", $htmlPieces->get($page, "year"));
-        $response->add("length", $htmlPieces->get($page, "length"));
-        $response->add("plot", $htmlPieces->get($page, "plot"));
-        $response->add("rating", $htmlPieces->get($page, "rating"));
-        $response->add("rating_votes", $htmlPieces->get($page, "rating_votes"));
-        $response->add("rating_aggregate", $htmlPieces->get($page, "rating_aggregate"));
-        $response->add("poster", $htmlPieces->get($page, "poster"));
-        $response->add("trailer", $htmlPieces->get($page, "trailer"));
-        $response->add("tvShow", $htmlPieces->get($page, "tvShow"));
-        $response->add("cast", $htmlPieces->get($page, "cast"));
-        $response->add("seasons", []);
-        $response->add("technical_specs", []);
-
-        //  If techSpecs is enabled in user $options
-        //  -> Make a second request to load the full techSpecs page
-        if ($options["techSpecs"]) {
-            $page_techSpecs = $dom->fetch("https://www.imdb.com/title/$filmId/technical", $options);
-            $response->add("technical_specs", $htmlPieces->get($page_techSpecs, "technical_specs"));
-        }
-
-        // If seasons is enabled & is a tv show
-        if ($options['seasons'] && $response->get("tvShow")) {
-            $url = "https://www.imdb.com/title/$filmId/episodes";
-            $page_seasons = $dom->fetch($url, $options);
-            // If film has episodes or seasons
-            if (count($page_seasons->find(".error_code_404")) == 0) {
-                $response->add("seasons", $htmlPieces->get($page_seasons, "seasons", $url));
-            }
-        }
-
-        //  If caching is enabled
+        // set the parsed representation, if the cache is enabled
         if ($options["cache"]) {
             //  Add result to the cache
-            $cache->add($filmId, $response->return());
+            $cache->add($imdbId, $arrayProps);
         }
 
         //  Return the response $store
-        return $response->return();
+        return $arrayProps;
     }
 
     /**
      * Searches IMDB for films, people and companies
      * @param string $search
      * @param array  $options
-     * @return array $searchData
+     * @return Dataset<SearchResult>
      */
-    public function search(string $search, array $options = []): array
+    public function search(string $search, array $options = []): Dataset
     {
         //  Combine user options with default ones
-        $options = $this->populateOptions($options);
+        $options = $this->extendOpts($options);
 
-        //  Initiate response object
-        // -> handles what the api returns
-        $response = new Response;
-
-        //  Initiate dom object
-        //  -> handles page scraping
+        // fetch the search page in json format
         $dom = new Dom;
+        $keyword = urlencode(urldecode($search));
+        $page = $dom->raw("https://v3.sg.media-imdb.com/suggestion/x/{$keyword}.json?includeVideos=0", $options);
 
-        //  Initiate html-pieces object
-        //  -> handles finding specific content from the dom
-        $htmlPieces = new HtmlPieces;
+        // try to json-decode the textContent of the page
+        $searchData = @json_decode($page, true);
 
-        //  Encode search string as a standard URL string
-        //  -> ' ' => '%20'
-        $search_url = urlencode(urldecode($search));
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($searchData) || !array_key_exists('d', $searchData)) {
+            return Dataset::new([]);
+        }
 
-        //  Load imdb search page and parse the dom
-        $page = $dom->fetch("https://www.imdb.com/find/?q=$search_url&s=".$options["category"], $options);
-
-        //  Add all search data to response $store
-        $response->add("titles", $htmlPieces->get($page, "titles"));
-        $response->add("names", $htmlPieces->get($page, "people"));
-        $response->add("companies", $htmlPieces->get($page, "companies"));
-
-        return $response->return();
+        return Dataset::new(array_map(function ($item) {
+            return SearchResult::newFromArray([
+                'id' => $item['id'],
+                'title' => $item['l'],
+                'image' => $item['i']['imageUrl'] ?? null,
+                'year' => $item['y'] ?? null,
+                'type' => $item['q'] ?? null,
+                'category' => $item['qid'],
+                'starring' => $item['s'] ?? null,
+                'rank' => $item['rank'] ?? null,
+            ]);
+        }, $searchData['d']));
     }
+
+    // https://www.imdb.com/_next/data/pM_RU9ZlkqF1_JziHhCvL/en-US/title/tt0898266/episodes.json?season=2&tconst=tt0898266
 
 }

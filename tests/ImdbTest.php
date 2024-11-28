@@ -3,14 +3,17 @@
 use PHPUnit\Framework\TestCase;
 use Mfonte\ImdbScraper\Imdb;
 use Mfonte\ImdbScraper\Cache;
-use Mfonte\ImdbScraper\Response;
 
-class ImdbTest extends TestCase {
-
+class ImdbTest extends TestCase
+{
     public function testFilm()
     {
         $imdb = new Imdb;
-        $film = $imdb->film('tt0816692', [ 'cache' => false ]);
+        $film = $imdb->film('tt0816692', [
+            'cache' => true,
+            'locale' => 'it',
+            'guzzleLogFile' => '.phpunit.guzzle.log'
+        ]);
 
         $this->assertEquals('tt0816692', $film['id']);
         $this->assertEquals('Interstellar', $film['title']);
@@ -57,9 +60,9 @@ class ImdbTest extends TestCase {
         $imdb = new Imdb;
         $cache = new Cache;
         $film = $imdb->film('tt0065531', [
-            'cache'       => false,
-            'curlHeaders' => ['Accept-Language: de-DE, de;q=0.5'],
-            'techSpecs'   => false
+            'cache'   => false,
+            'locale'  => 'it',
+            'seasons' => false
         ]);
 
         $this->assertEquals('Vier im roten Kreis', $film['title']);
@@ -71,7 +74,9 @@ class ImdbTest extends TestCase {
     {
         $imdb = new Imdb;
         $cache = new Cache;
-        $film = $imdb->film('tt0816692', [ 'cache' => true, 'techSpecs' => false ]);
+        $film = $imdb->film('tt0816692', [
+            'cache' => true
+        ]);
         $cache_film = $cache->get('tt0816692')->film;
 
         $this->assertEquals(true, $cache->has('tt0816692'));
@@ -88,7 +93,7 @@ class ImdbTest extends TestCase {
 
         $search_2 = $imdb->search('The Life and Death of Colonel Blimp');
 
-		$this->assertEquals('The Life and Death of Colonel Blimp', $search_2['titles'][0]['title']);
-		$this->assertEquals('tt0036112', $search_2['titles'][0]['id']);
+        $this->assertEquals('The Life and Death of Colonel Blimp', $search_2['titles'][0]['title']);
+        $this->assertEquals('tt0036112', $search_2['titles'][0]['id']);
     }
 }

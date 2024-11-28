@@ -1,4 +1,7 @@
 vendor/*
 build/*
-src/cache/*
+cache/*
 .phpunit.result.cache
+.phpunit.guzzle.log
+test.php
+src/Stale.php

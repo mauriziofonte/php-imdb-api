@@ -1,47 +1,78 @@
 <?php
 namespace Mfonte\ImdbScraper;
 
+use voku\cache\Cache as CacheDriver;
+use voku\cache\AdapterFileSimple;
+use voku\cache\SerializerDefault;
+
 /**
-*  Class Cache
-*
+* Class Cache
 *
 * @package mfonte/imdb-scraper
 * @author Harry Merritt
+* @author Maurizio Fonte
 */
 class Cache
 {
+    const TTL = 2678400; // 31 days
+
+    private $cacheDir;
+
+    /**
+     * voku\cache\Cache instance
+     *
+     * @var \voku\cache\Cache
+     */
     private $cache;
     
     public function __construct()
     {
-        /**
-         * Initiate cache database
-         *
-         * @var \Filebase\Database
-         */
-        $this->cache = new \Filebase\Database([
-            'dir'            => __DIR__ . DIRECTORY_SEPARATOR . 'cache/films/',
-            'backupLocation' => __DIR__ . DIRECTORY_SEPARATOR . 'cache/films/backups/',
-            'format'         => \Filebase\Format\Json::class,
-            'cache'          => true,
-            'cache_expires'  => 31540000,
-            'pretty'         => false
-        ]);
+        $this->cacheDir = realpath(__DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'cache';
+
+        if (!is_dir($this->cacheDir)) {
+            mkdir($this->cacheDir, 0755, true);
+        }
+
+        if (!is_writable($this->cacheDir)) {
+            throw new \Exception("Mfonte\ImdbScraper\Cache: Cache directory \"{$this->cacheDir}\" is not writable.");
+        }
+
+        // auto-prune the cache files older than TTL
+        $cacheFiles = glob($this->cacheDir . DIRECTORY_SEPARATOR . '*.cache');
+        foreach ($cacheFiles as $cacheFile) {
+            if (time() - filemtime($cacheFile) > self::TTL) {
+                unlink($cacheFile);
+            }
+        }
+        
+        $adapter = new AdapterFileSimple($this->cacheDir);
+        $serializer = new SerializerDefault();
+        $this->cache = new CacheDriver($adapter, $serializer);
+    }
+
+    /**
+     * Get the TTL for the cache item
+     *
+     * @param int|null $ttl
+     * @return int
+     */
+    private function getTtl(?int $ttl): int
+    {
+        return ($ttl > 0) ? $ttl : self::TTL;
     }
 
     /**
      * Add (or modify) an item in the cache
      *
      * @param string $key
-     * @param string $value
+     * @param mixed $value
+     * @param int|null $ttl
+     *
      * @return bool
      */
-    public function add(string $key, $value)
+    public function add(string $key, $value, ?int $ttl = null)
     {
-        $file = $this->get($key);
-        $file->film = $value;
-        $file->save();
-        return true;
+        return $this->cache->setItem($key, $value, $this->getTtl($ttl));
     }
 
     /**
@@ -49,22 +80,25 @@ class Cache
      *
      * @return bool
      */
-    public function delete(string $key): bool
+    public function delete(string $key)
     {
-        $file = $this->get($key);
-        $file->delete();
-        return true;
+        return $this->cache->removeItem($key);
     }
 
     /**
      * Get an item from the cache
      *
      * @param string $key
-     * @return \Filebase\Document
+     *
+     * @return mixed|null
      */
-    public function get(string $key): mixed
+    public function get(string $key)
     {
-        return $this->cache->get($key);
+        if (!$this->has($key)) {
+            return null;
+        }
+
+        return $this->cache->getItem($key);
     }
 
     /**
@@ -73,9 +107,8 @@ class Cache
      * @param string $key
      * @return bool
      */
-    public function has(string $key): bool
+    public function has(string $key)
     {
-        return $this->cache->has($key);
+        return $this->cache->existsItem($key);
     }
-
 }

@@ -4,8 +4,8 @@
 
 Install the latest version using [composer](https://getcomposer.org/).
 
-```
-$ composer require mfonte/imdb-scraper
+```bash
+composer require mfonte/imdb-scraper
 ```
 
 ## Usage
@@ -28,12 +28,13 @@ $imdb->film("tt0816692");
 
 ### Options
 
-| Name          | Type   | Default Value                                                                                     | Description                                                                                   |
-| ------------- | ------ | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `curlHeaders` | array  | `['Accept-Language: en-US,en;q=0.5']`                                                             | Custom headers can be passed to `cURL` when fetching the IMDB page                            |
-| `cache`       | bool   | `true`                                                                                            | Caches film data to speed-up future requests for the same film                                |
-| `techSpecs`   | bool   | `true`                                                                                            | Loads a films technical specifications (this will take longer as it makes a separate request) |
-| `category`    | string | `all`                                                                                             | What category to search for (films `tt`, people `nm` or companies `co`)                       |
+| Name            | Type   | Default Value          | Description                                                                                      |
+| --------------- | ------ | ---------------------- | ------------------------------------------------------------------------------------------------ |
+| `cache`         | bool   | `true`                 | Caches film data to speed-up future requests for the same film                                   |
+| `locale`        | string | `it`                   | An ISO 639-1 locale string that will be used for Imdb scraping in the preferred language         |
+| `seasons`       | bool   | `false`                | Whether to fetch the seasons of a TV show or not (only works with TV shows)                      |
+| `guzzleHeaders` | ?array | `null`                 | An array of headers to be sent with the Guzzle requests                                          |
+| `guzzleLogFile` | string | `null`                 | Path to a file where Guzzle will log all requests and responses                                  |
 
 ```php
 $imdb = new Imdb;
@@ -41,14 +42,13 @@ $imdb = new Imdb;
 //  Options are passed as an array as the second argument
 //  These are the default options
 $imdb->film("tt0816692", [
-    'cache'        => true,
-    'curlHeaders'  => ['Accept-Language: en-US,en;q=0.5'],
-    'techSpecs'    => true,
+    'locale'  => 'it',
+    'cache'   => true,
+    'seasons' => true,
 ]);
 
 $imdb->search("Interstellar", [
-    'category'     => 'all',
-    'curlHeaders'  => ['Accept-Language: en-US,en;q=0.5'],
+    'locale'       => 'en',
 ]);
 ```
 
@@ -108,9 +108,3 @@ Search IMDB to return an array of films, people and companies
     - image
 ```
 
-## Dependencies
-
-> All dependencies are managed automatically by `composer`.
-
--   [php-html-parser](https://github.com/paquettg/php-html-parser)
--   [filebase](https://github.com/tmarois/Filebase)
